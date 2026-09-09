@@ -15,24 +15,6 @@ BRANCH="main"
 
 cd "$REPO"
 
-# 네트워크가 죽어 있으면 조용히 종료 (다음 타이머 때 재시도)
-if ! git fetch --quiet origin "$BRANCH" 2>/dev/null; then
-    exit 0
-fi
-
-LOCAL=$(git rev-parse HEAD)
-REMOTE=$(git rev-parse "origin/$BRANCH")
-
-if [ "$LOCAL" = "$REMOTE" ]; then
-    exit 0
-fi
-
-CHANGED=$(git diff --name-only "$LOCAL" "$REMOTE")
-echo "[mintcap-deploy] $LOCAL -> $REMOTE"
-echo "$CHANGED" | sed 's/^/  changed: /'
-
-git reset --hard "origin/$BRANCH"
-
 # ---- 유닛 동기화 -------------------------------------------------------------
 # 저장소에서 사라진 유닛은 복사만으로는 없어지지 않는다. 남겨두면 옛 서비스가
 # 계속 돌면서 포트를 잡고 있으므로(예: streamlit -> uvicorn 전환), 저장소에
@@ -67,6 +49,51 @@ sync_units() {
         esac
     done
 }
+
+# 설치된 유닛이 저장소와 다른가? -- 커밋 차이와 무관하게 매번 본다.
+#
+# 배포 스크립트는 자기 자신도 교체한다. 옛 스크립트가 새 커밋을 받다가 중간에
+# 죽으면 저장소만 앞서 가고 유닛은 옛것으로 남는데, 그 다음 틱부터는 HEAD 가
+# origin 과 같아 조기 종료해 영영 고쳐지지 않는다. 그래서 '커밋이 바뀌었나'가
+# 아니라 '실제로 다른가'를 기준으로 삼는다.
+units_drifted() {
+    local f base
+    for f in deploy/systemd/mintcap-*.service deploy/systemd/mintcap-*.timer; do
+        [ -e "$f" ] || continue
+        base=$(basename "$f")
+        cmp -s "$f" "$UNIT_DIR/$base" || return 0
+    done
+    for f in "$UNIT_DIR"/mintcap-*.service "$UNIT_DIR"/mintcap-*.timer; do
+        [ -e "$f" ] || continue
+        [ -e "deploy/systemd/$(basename "$f")" ] || return 0
+    done
+    return 1
+}
+
+# ---- 여기서부터 실제 배포 ----------------------------------------------------
+# 네트워크가 죽어 있으면 조용히 종료 (다음 타이머 때 재시도)
+if ! git fetch --quiet origin "$BRANCH" 2>/dev/null; then
+    exit 0
+fi
+
+LOCAL=$(git rev-parse HEAD)
+REMOTE=$(git rev-parse "origin/$BRANCH")
+
+if [ "$LOCAL" = "$REMOTE" ]; then
+    # 커밋은 최신인데 유닛만 뒤처진 경우를 여기서 따라잡는다.
+    if units_drifted; then
+        echo "[mintcap-deploy] 유닛이 저장소와 다름 -- 동기화"
+        sync_units
+        systemctl --user restart mintcap-hub mintcap-web || true
+    fi
+    exit 0
+fi
+
+CHANGED=$(git diff --name-only "$LOCAL" "$REMOTE")
+echo "[mintcap-deploy] $LOCAL -> $REMOTE"
+echo "$CHANGED" | sed 's/^/  changed: /'
+
+git reset --hard "origin/$BRANCH"
 
 restart_hub=0
 restart_web=0
