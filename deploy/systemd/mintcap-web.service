@@ -1,0 +1,15 @@
+[Unit]
+Description=mintcap Web (FastAPI)
+After=network-online.target mintcap-hub.service
+
+[Service]
+Type=simple
+WorkingDirectory=%h/mintcap
+Environment=MINTCAP_DB=%h/mintcap/sensor_data.db
+Environment=MINTCAP_NODES=%h/mintcap/nodes.json
+ExecStart=%h/mintcap/.venv/bin/uvicorn web.api:app --host 0.0.0.0 --port 8501
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target

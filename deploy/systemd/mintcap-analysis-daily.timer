@@ -1,0 +1,10 @@
+[Unit]
+Description=mintcap 분석 배치 (매일 새벽)
+
+[Timer]
+OnCalendar=*-*-* 18:10:00 UTC
+AccuracySec=5min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

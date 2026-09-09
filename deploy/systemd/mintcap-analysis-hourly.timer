@@ -1,0 +1,11 @@
+[Unit]
+Description=mintcap 분석 배치 (매시간)
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=1h
+AccuracySec=1min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

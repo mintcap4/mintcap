@@ -10,6 +10,7 @@ set -euo pipefail
 
 REPO="${MINTCAP_REPO:-$HOME/mintcap}"
 UV="$HOME/.local/bin/uv"
+UNIT_DIR="$HOME/.config/systemd/user"
 BRANCH="main"
 
 cd "$REPO"
@@ -32,38 +33,78 @@ echo "$CHANGED" | sed 's/^/  changed: /'
 
 git reset --hard "origin/$BRANCH"
 
+# ---- 유닛 동기화 -------------------------------------------------------------
+# 저장소에서 사라진 유닛은 복사만으로는 없어지지 않는다. 남겨두면 옛 서비스가
+# 계속 돌면서 포트를 잡고 있으므로(예: streamlit -> uvicorn 전환), 저장소에
+# 없는 mintcap-* 유닛은 멈추고 지운다.
+sync_units() {
+    mkdir -p "$UNIT_DIR"
+    local repo_units=() f base
+    for f in deploy/systemd/mintcap-*.service deploy/systemd/mintcap-*.timer; do
+        [ -e "$f" ] || continue
+        base=$(basename "$f")
+        repo_units+=("$base")
+        cp "$f" "$UNIT_DIR/$base"
+    done
+
+    for f in "$UNIT_DIR"/mintcap-*.service "$UNIT_DIR"/mintcap-*.timer; do
+        [ -e "$f" ] || continue
+        base=$(basename "$f")
+        if [[ ! " ${repo_units[*]} " == *" $base "* ]]; then
+            echo "  제거된 유닛: $base"
+            systemctl --user disable --now "$base" 2>/dev/null || true
+            rm -f "$f"
+        fi
+    done
+    systemctl --user daemon-reload
+
+    # 새로 생긴 유닛은 활성화해 둔다(이미 활성인 것은 그대로).
+    for base in "${repo_units[@]}"; do
+        case "$base" in
+            *.timer) systemctl --user enable --now "$base" >/dev/null 2>&1 || true ;;
+            mintcap-hub.service|mintcap-web.service)
+                systemctl --user enable "$base" >/dev/null 2>&1 || true ;;
+        esac
+    done
+}
+
 restart_hub=0
-restart_dash=0
-reload_units=0
+restart_web=0
+units_changed=0
+deps_changed=0
 
 while IFS= read -r f; do
     case "$f" in
-        pyproject.toml|uv.lock)          "$UV" sync --frozen ;;
-        deploy/systemd/*)                reload_units=1 ;;
+        pyproject.toml|uv.lock)          deps_changed=1 ;;
+        deploy/systemd/*)                units_changed=1 ;;
     esac
     case "$f" in
         hub.py|nodes.json)               restart_hub=1 ;;
     esac
     case "$f" in
-        dashboard.py|nodes.json)         restart_dash=1 ;;
-        static/*|.streamlit/*)           restart_dash=1 ;;
+        # 웹은 analysis 를 import 하고 모델을 읽으므로 그쪽이 바뀌어도 재시작한다
+        web/*|nodes.json|analysis/*|models/*) restart_web=1 ;;
     esac
 done <<< "$CHANGED"
 
-if [ "$reload_units" = 1 ]; then
-    mkdir -p "$HOME/.config/systemd/user"
-    cp deploy/systemd/mintcap-hub.service \
-       deploy/systemd/mintcap-dashboard.service \
-       deploy/systemd/mintcap-deploy.service \
-       deploy/systemd/mintcap-deploy.timer \
-       "$HOME/.config/systemd/user/"
-    systemctl --user daemon-reload
+if [ "$deps_changed" = 1 ]; then
+    "$UV" sync --frozen
     restart_hub=1
-    restart_dash=1
+    restart_web=1
 fi
 
-[ "$restart_hub" = 1 ]  && systemctl --user restart mintcap-hub      && echo "  restarted: mintcap-hub"
-[ "$restart_dash" = 1 ] && systemctl --user restart mintcap-dashboard && echo "  restarted: mintcap-dashboard"
+if [ "$units_changed" = 1 ]; then
+    sync_units
+    restart_hub=1
+    restart_web=1
+fi
 
-logger -t mintcap-deploy "deployed ${LOCAL:0:7} -> ${REMOTE:0:7} (hub=$restart_hub dash=$restart_dash)" || true
+if [ "$restart_hub" = 1 ]; then
+    systemctl --user restart mintcap-hub && echo "  restarted: mintcap-hub"
+fi
+if [ "$restart_web" = 1 ]; then
+    systemctl --user restart mintcap-web && echo "  restarted: mintcap-web"
+fi
+
+logger -t mintcap-deploy "deployed ${LOCAL:0:7} -> ${REMOTE:0:7} (hub=$restart_hub web=$restart_web)" || true
 echo "[mintcap-deploy] done"

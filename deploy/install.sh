@@ -4,7 +4,8 @@
 # 하는 일:
 #   1) ~/.config/systemd/user/ 에 user 서비스 유닛 설치
 #   2) uv sync 로 .venv 구성
-#   3) hub / dashboard / deploy.timer 활성화 및 기동
+#   3) 분석 배치를 한 번 돌려 화면에 띄울 결과를 만든다
+#   4) hub / web / 타이머들 활성화 및 기동
 #
 # 사전 조건:
 #   - ~/mintcap 이 이 저장소의 클론이어야 함
@@ -15,7 +16,7 @@ set -euo pipefail
 REPO="${MINTCAP_REPO:-$HOME/mintcap}"
 UV="$HOME/.local/bin/uv"
 ENV_FILE="$HOME/.config/mintcap/mintcap.env"
-USER_UNIT_DIR="$HOME/.config/systemd/user"
+UNIT_DIR="$HOME/.config/systemd/user"
 
 cd "$REPO"
 
@@ -36,27 +37,43 @@ echo "== 2. Python 의존성 (uv sync) =="
 echo "   OK: $REPO/.venv"
 
 echo "== 3. user systemd 유닛 설치 =="
-mkdir -p "$USER_UNIT_DIR"
-cp deploy/systemd/mintcap-hub.service \
-   deploy/systemd/mintcap-dashboard.service \
-   deploy/systemd/mintcap-deploy.service \
-   deploy/systemd/mintcap-deploy.timer \
-   "$USER_UNIT_DIR/"
+mkdir -p "$UNIT_DIR"
+# 저장소에 없는 옛 mintcap-* 유닛은 멈추고 지운다 (streamlit 대시보드 등)
+for f in "$UNIT_DIR"/mintcap-*.service "$UNIT_DIR"/mintcap-*.timer; do
+    [ -e "$f" ] || continue
+    base=$(basename "$f")
+    if [ ! -e "deploy/systemd/$base" ]; then
+        echo "   제거: $base"
+        systemctl --user disable --now "$base" 2>/dev/null || true
+        rm -f "$f"
+    fi
+done
+cp deploy/systemd/mintcap-*.service deploy/systemd/mintcap-*.timer "$UNIT_DIR/"
 systemctl --user daemon-reload
-echo "   OK: $USER_UNIT_DIR"
+echo "   OK: $UNIT_DIR"
 
-echo "== 4. 서비스 활성화 및 기동 =="
+echo "== 4. 분석 배치 1회 실행 (화면에 띄울 결과 생성) =="
+if [ -f models/gmm_v1.json ]; then
+    .venv/bin/python -m analysis.runner --db sensor_data.db --kinds all || \
+        echo "   경고: 배치 실패 -- 데이터가 아직 없을 수 있습니다"
+else
+    echo "   건너뜀: models/gmm_v1.json 이 없습니다"
+fi
+
+echo "== 5. 서비스 활성화 및 기동 =="
 systemctl --user enable --now mintcap-hub.service
-systemctl --user enable --now mintcap-dashboard.service
+systemctl --user enable --now mintcap-web.service
 systemctl --user enable --now mintcap-deploy.timer
+systemctl --user enable --now mintcap-analysis-hourly.timer
+systemctl --user enable --now mintcap-analysis-daily.timer
 echo "   OK"
 
 echo
 echo "== 상태 =="
-systemctl --user --no-pager --lines=0 status mintcap-hub mintcap-dashboard mintcap-deploy.timer || true
+systemctl --user --no-pager --lines=0 status mintcap-hub mintcap-web || true
+systemctl --user list-timers --no-pager | grep -E 'mintcap|NEXT' || true
 echo
 echo "다음(root 1회, 아직 안 했다면):"
 echo "  sudo loginctl enable-linger $USER"
-echo "  sudo systemctl disable --now multinode_aq_hub multinode_aq_dashboard"
 echo
-echo "대시보드:  http://<이 장치 IP>:8501"
+echo "웹:  http://<이 장치 IP>:8501"

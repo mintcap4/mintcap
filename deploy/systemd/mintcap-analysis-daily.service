@@ -1,0 +1,10 @@
+[Unit]
+Description=mintcap 분석 배치 (매일) -- band/transition/occ_co2 + 모델 이력
+After=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/mintcap
+ExecStart=%h/mintcap/.venv/bin/python -m analysis.runner --db %h/mintcap/sensor_data.db --kinds daily
+ExecStartPost=%h/mintcap/.venv/bin/python -m analysis.runner --db %h/mintcap/sensor_data.db --kinds weekly
+Nice=15
