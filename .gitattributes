@@ -1,0 +1,21 @@
+# 줄바꿈 정규화 -- 저장소에는 항상 LF 로 보관한다.
+# 장치(Linux)에서 CRLF 가 섞이면 deploy/*.sh 와 systemd 유닛이 깨지므로
+# Windows 클론의 core.autocrlf 설정과 무관하게 강제한다.
+* text=auto eol=lf
+
+# 장치에서 그대로 실행/파싱되는 파일 -- 반드시 LF
+*.sh          text eol=lf
+*.service     text eol=lf
+*.timer       text eol=lf
+*.py          text eol=lf
+*.toml        text eol=lf
+*.json        text eol=lf
+*.css         text eol=lf
+*.html        text eol=lf
+*.yml         text eol=lf
+
+# 바이너리 취급 (줄바꿈 변환 금지)
+*.db          binary
+*.png         binary
+*.jpg         binary
+uv.lock       text eol=lf -diff
