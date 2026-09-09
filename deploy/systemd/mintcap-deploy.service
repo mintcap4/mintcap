@@ -1,0 +1,8 @@
+[Unit]
+Description=mintcap deploy (git fetch + reset --hard + restart changed services)
+After=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/mintcap
+ExecStart=%h/mintcap/deploy/deploy.sh

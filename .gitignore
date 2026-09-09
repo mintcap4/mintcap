@@ -1,0 +1,31 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# 런타임 데이터 / 백업 (장치에서 생성, 커밋 안 함)
+sensor_data.db
+sensor_data.db-journal
+sensor_data.db-wal
+sensor_data.db-shm
+sensor_backup_*.csv
+
+# 비밀값 (실제 값은 ~/.config/mintcap/mintcap.env 에만)
+mintcap.env
+*.env
+!deploy/mintcap.env.example
+
+# OS 잡동사니
+.DS_Store
+filess/
+filesss/
+
+# Streamlit 로컬 상태
+.streamlit/machine_id*
+.streamlit/secrets.toml

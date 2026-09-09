@@ -1,0 +1,115 @@
+/* ============================================================
+   tokens.css — Apple HIG design tokens (Dark appearance)
+   단일 소스: app.css / vision_panel.css 모두 이 파일을 앞에 붙여 사용.
+   Plotly 색상은 CSS를 읽지 못하므로 dashboard.py의 SYS dict가
+   아래 시스템 컬러 값을 그대로 미러링한다. 값 변경 시 양쪽 동기화 필요.
+   ============================================================ */
+
+:root {
+  /* ── System colors (iOS/macOS Dark) ───────────────────────── */
+  --sys-blue:    #0A84FF;
+  --sys-green:   #30D158;
+  --sys-indigo:  #5E5CE6;
+  --sys-mint:    #63E6E2;
+  --sys-orange:  #FF9F0A;
+  --sys-pink:    #FF375F;
+  --sys-purple:  #BF5AF2;
+  --sys-red:     #FF453A;
+  --sys-teal:    #64D2FF;
+  --sys-yellow:  #FFD60A;
+  --sys-brown:   #AC8E68;
+  --sys-gray:    #98989D;
+
+  /* ── Backgrounds (grouped, dark) ──────────────────────────── */
+  --bg-base:       #000000;
+  --bg-elevated:   #1C1C1E;
+  --bg-elevated-2: #2C2C2E;
+  --bg-elevated-3: #3A3A3C;
+
+  /* ── Fills (컨트롤 배경) ──────────────────────────────────── */
+  --fill-primary:    rgba(120, 120, 128, 0.36);
+  --fill-secondary:  rgba(120, 120, 128, 0.32);
+  --fill-tertiary:   rgba(118, 118, 128, 0.24);
+  --fill-quaternary: rgba(116, 116, 128, 0.18);
+
+  /* ── Labels (vibrancy hierarchy) ──────────────────────────── */
+  --label-primary:    #FFFFFF;
+  --label-secondary:  rgba(235, 235, 245, 0.60);
+  --label-tertiary:   rgba(235, 235, 245, 0.30);
+  --label-quaternary: rgba(235, 235, 245, 0.18);
+
+  /* ── Separators ───────────────────────────────────────────── */
+  --separator:        rgba(84, 84, 88, 0.65);
+  --separator-opaque: #38383A;
+
+  /* ── Materials (반투명 + 블러) ─────────────────────────────── */
+  --material-thin:    rgba(44, 44, 46, 0.62);
+  --material-regular: rgba(28, 28, 30, 0.78);
+  --material-thick:   rgba(28, 28, 30, 0.92);
+  --material-blur:    saturate(180%) blur(20px);
+
+  /* ── Typography — SF Pro 우선, 한글은 Apple SD Gothic Neo ──── */
+  --font-text: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",
+               "Apple SD Gothic Neo", "Pretendard Variable", Pretendard,
+               "Malgun Gothic", system-ui, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
+
+  /* HIG 타입 스케일: size / line-height / tracking */
+  --t-large-title: 34px;  --lh-large-title: 41px;  --tr-large-title: -0.4px;
+  --t-title1:      28px;  --lh-title1:      34px;  --tr-title1:      -0.3px;
+  --t-title2:      22px;  --lh-title2:      28px;  --tr-title2:      -0.2px;
+  --t-title3:      20px;  --lh-title3:      25px;  --tr-title3:      -0.1px;
+  --t-headline:    17px;  --lh-headline:    22px;
+  --t-body:        17px;  --lh-body:        22px;
+  --t-callout:     16px;  --lh-callout:     21px;
+  --t-subhead:     15px;  --lh-subhead:     20px;
+  --t-footnote:    13px;  --lh-footnote:    18px;
+  --t-caption1:    12px;  --lh-caption1:    16px;
+  --t-caption2:    11px;  --lh-caption2:    13px;
+
+  --w-regular:  400;
+  --w-medium:   500;
+  --w-semibold: 600;
+  --w-bold:     700;
+
+  /* ── Spacing — 4pt 그리드 ─────────────────────────────────── */
+  --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px; --sp-4: 16px;
+  --sp-5: 20px; --sp-6: 24px; --sp-8: 32px; --sp-10: 40px;
+
+  /* ── Corner radius (continuous corner 근사) ───────────────── */
+  --r-xs:   6px;
+  --r-sm:   8px;
+  --r-md:  10px;
+  --r-lg:  14px;
+  --r-xl:  18px;
+  --r-2xl: 22px;
+  --r-cap: 980px;   /* capsule */
+
+  /* ── Elevation ────────────────────────────────────────────── */
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.40);
+  --shadow-2: 0 4px 16px rgba(0, 0, 0, 0.45);
+  --shadow-3: 0 12px 32px rgba(0, 0, 0, 0.55);
+
+  /* ── Motion ───────────────────────────────────────────────── */
+  --ease-standard: cubic-bezier(0.25, 0.1, 0.25, 1);
+  --ease-out-sheet: cubic-bezier(0.32, 0.72, 0, 1);
+  --dur-fast: 150ms;
+  --dur-base: 250ms;
+  --dur-slow: 400ms;
+
+  /* ── Semantic (공기질 등급) ───────────────────────────────── */
+  --grade-good:     var(--sys-green);
+  --grade-moderate: var(--sys-yellow);
+  --grade-bad:      var(--sys-red);
+  --accent:         var(--sys-blue);
+  --accent-vision:  var(--sys-orange);
+}
+
+/* 접근성: 시스템 모션 감소 설정 존중 (HIG - Motion) */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

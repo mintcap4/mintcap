@@ -1,0 +1,12 @@
+# Streamlit base theme — static/tokens.css 의 값과 일치시킨 것.
+# (여기는 Streamlit 위젯 기본값용, 세부 스타일은 static/app.css 가 담당)
+[theme]
+base               = "dark"
+primaryColor       = "#0A84FF"   # --sys-blue
+backgroundColor    = "#000000"   # --bg-base
+secondaryBackgroundColor = "#1C1C1E"   # --bg-elevated
+textColor          = "#FFFFFF"   # --label-primary
+font               = "sans serif"
+
+[server]
+headless = true

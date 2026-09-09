@@ -1,0 +1,14 @@
+[Unit]
+Description=mintcap Sensor Hub (MQTT -> SQLite)
+After=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/mintcap
+EnvironmentFile=%h/.config/mintcap/mintcap.env
+ExecStart=%h/mintcap/.venv/bin/python %h/mintcap/hub.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,50 @@
+<!-- ============================================================
+     vision_panel.html — 재실 탐지 패널 마크업 템플릿
+     dashboard.py 의 render_template() 이 자리표시자(이중 중괄호 + key)를
+     실제 값으로 치환한다.
+     스타일은 vision_panel.css / tokens.css 에만 존재 (인라인 스타일 없음,
+     단 조준선 위치·막대 높이 등 '데이터로 계산되는 좌표'는 예외).
+     ============================================================ -->
+<div class="vp">
+  <div class="vp__hd">
+    <div class="vp__title">
+      재실 탐지 — {{label}}
+      <span class="vp__node">{{node}}</span>
+    </div>
+    <span class="{{status_class}}">{{status_text}}</span>
+  </div>
+
+  <div class="vp__chips">
+    <div class="vp__chip vp__chip--accent">
+      <div class="vp__chip-value">{{occ_mean}}</div>
+      <div class="vp__chip-label">5분 평균</div>
+    </div>
+    <div class="vp__chip">
+      <div class="vp__chip-value">{{occ_med}}</div>
+      <div class="vp__chip-label">중앙값</div>
+    </div>
+    <div class="vp__chip">
+      <div class="vp__chip-value">{{occ_max}}</div>
+      <div class="vp__chip-label">최대</div>
+    </div>
+    <div class="vp__chip">
+      <div class="vp__chip-value">{{n}}</div>
+      <div class="vp__chip-label">샘플 n</div>
+    </div>
+  </div>
+
+  <div class="vp__maprow">
+    <div class="vp__map">
+      {{crosshairs}}
+      <span class="vp__map-tag">CAMERA VIEW 4:3 · coords /{{w}}</span>
+    </div>
+    <div class="vp__side">
+      <div class="vp__cap">최근 버킷 추이 (평균 인원)</div>
+      <div class="vp__bars">{{bars}}</div>
+      <div class="vp__ft">
+        조준선 = 최대 인원(<b>{{occ_max}}</b>) 시점 위치 · 4:3 프레임 상대좌표<br>
+        버킷 <b>{{bucket_time}}</b> KST · 영상 비전송, 좌표만 수집 (온디바이스 추론)
+      </div>
+    </div>
+  </div>
+</div>

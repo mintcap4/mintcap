@@ -1,0 +1,11 @@
+[Unit]
+Description=mintcap deploy timer (1분 간격 폴링)
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=1min
+AccuracySec=10s
+Persistent=false
+
+[Install]
+WantedBy=timers.target

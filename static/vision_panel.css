@@ -1,0 +1,227 @@
+/* ============================================================
+   vision_panel.css — 재실 탐지 패널 (components.html iframe 전용)
+   iframe 은 부모 문서 CSS 를 상속하지 않으므로 tokens.css 와 함께
+   이 파일을 통째로 주입한다. iframe 뒤에는 블러할 배경이 없어
+   머티리얼 대신 불투명 elevated 배경을 쓴다.
+   ============================================================ */
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: transparent;
+}
+
+.vp {
+  font-family: var(--font-text);
+  -webkit-font-smoothing: antialiased;
+  background: var(--bg-elevated);
+  border: 1px solid var(--separator);
+  border-radius: var(--r-xl);
+  box-shadow: var(--shadow-1);
+  padding: var(--sp-4) var(--sp-5) var(--sp-4);
+  color: var(--label-primary);
+}
+
+/* ── 헤더 ─────────────────────────────────────────────────── */
+.vp__hd {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--sp-3);
+  padding-bottom: var(--sp-3);
+  border-bottom: 1px solid var(--separator);
+}
+.vp__title {
+  font-size: var(--t-headline);
+  line-height: var(--lh-headline);
+  font-weight: var(--w-semibold);
+}
+.vp__node {
+  font-size: var(--t-caption1);
+  font-weight: var(--w-regular);
+  color: var(--label-tertiary);
+  font-family: var(--font-mono);
+}
+
+/* 상태 배지 — capsule + 점 (HIG Status) */
+.vp__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  font-size: var(--t-caption2);
+  font-weight: var(--w-semibold);
+  letter-spacing: 0.06em;
+  padding: 4px 10px;
+  border-radius: var(--r-cap);
+  background: rgba(48, 209, 88, 0.16);
+  color: var(--sys-green);
+}
+.vp__status::before {
+  content: "";
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: vp-pulse 2s var(--ease-standard) infinite;
+}
+.vp__status--stale {
+  background: rgba(255, 159, 10, 0.16);
+  color: var(--sys-orange);
+}
+.vp__status--stale::before { animation: none; }
+
+@keyframes vp-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.35; transform: scale(0.82); }
+}
+
+/* ── 통계 칩 — segmented control 느낌의 4분할 ─────────────── */
+.vp__chips {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 2px;
+  margin: var(--sp-3) 0 var(--sp-4);
+  padding: 2px;
+  background: var(--fill-quaternary);
+  border-radius: var(--r-lg);
+  width: clamp(288px, 52%, 380px);
+}
+.vp__chip {
+  background: var(--bg-elevated-2);
+  border-radius: var(--r-md);
+  padding: var(--sp-2) var(--sp-1);
+  text-align: center;
+  min-width: 0;
+}
+.vp__chip:first-child { border-radius: var(--r-md) var(--r-xs) var(--r-xs) var(--r-md); }
+.vp__chip:last-child  { border-radius: var(--r-xs) var(--r-md) var(--r-md) var(--r-xs); }
+.vp__chip-value {
+  font-size: var(--t-title3);
+  line-height: var(--lh-title3);
+  font-weight: var(--w-bold);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: var(--tr-title3);
+}
+.vp__chip--accent .vp__chip-value { color: var(--accent-vision); }
+.vp__chip-label {
+  font-size: var(--t-caption2);
+  line-height: var(--lh-caption2);
+  color: var(--label-secondary);
+  margin-top: 2px;
+}
+
+/* ── 맵 + 사이드 ──────────────────────────────────────────── */
+.vp__maprow {
+  display: flex;
+  gap: var(--sp-4);
+  align-items: stretch;
+}
+
+.vp__map {
+  position: relative;
+  flex: 0 0 clamp(288px, 52%, 380px);
+  aspect-ratio: 4 / 3;
+  background-color: #0E0E10;
+  border: 1px solid var(--separator);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  background-image:
+    repeating-linear-gradient(0deg,  transparent, transparent 23px, rgba(84,84,88,0.30) 24px),
+    repeating-linear-gradient(90deg, transparent, transparent 23px, rgba(84,84,88,0.30) 24px);
+}
+.vp__map-tag {
+  position: absolute;
+  left: var(--sp-2);
+  bottom: 6px;
+  font-size: var(--t-caption2);
+  font-family: var(--font-mono);
+  color: var(--label-quaternary);
+}
+.vp__map-empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--t-caption1);
+  color: var(--label-tertiary);
+}
+
+/* 조준선 — 시스템 오렌지, 은은한 호흡형 페이드 */
+.vp__ch {
+  position: absolute;
+  width: 40px; height: 40px;
+  transform: translate(-50%, -50%);
+  animation: vp-blink 1.6s var(--ease-standard) infinite;
+}
+.vp__ch::before,
+.vp__ch::after {
+  content: "";
+  position: absolute;
+  background: var(--accent-vision);
+}
+.vp__ch::before { left: 50%; top: -4px; bottom: -4px; width: 1.5px; transform: translateX(-50%); }
+.vp__ch::after  { top: 50%; left: -4px; right: -4px; height: 1.5px; transform: translateY(-50%); }
+.vp__ch-ring {
+  position: absolute;
+  inset: 9px;
+  border: 1.5px solid var(--accent-vision);
+  border-radius: 50%;
+  box-shadow: 0 0 10px rgba(255, 159, 10, 0.35);
+}
+.vp__ch-dot {
+  position: absolute;
+  left: 50%; top: 50%;
+  width: 4px; height: 4px;
+  background: var(--accent-vision);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+@keyframes vp-blink {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.28; }
+}
+
+/* 사이드 — 최근 버킷 추이 */
+.vp__side {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-width: 0;
+}
+.vp__cap {
+  font-size: var(--t-caption1);
+  color: var(--label-secondary);
+  margin-bottom: var(--sp-2);
+}
+.vp__bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 76px;
+}
+.vp__bars i {
+  flex: 1;
+  min-height: 2px;
+  background: var(--fill-primary);
+  border-radius: 3px 3px 0 0;
+  transition: height var(--dur-slow) var(--ease-out-sheet);
+}
+.vp__bars i.is-now { background: var(--accent-vision); }
+
+.vp__ft {
+  font-size: var(--t-caption2);
+  line-height: 1.45;
+  color: var(--label-tertiary);
+  margin-top: var(--sp-3);
+  padding-top: var(--sp-2);
+  border-top: 1px solid var(--separator);
+}
+.vp__ft b { color: var(--label-secondary); font-weight: var(--w-medium); }
+
+/* 좁은 폭에서는 맵과 사이드를 세로로 */
+@media (max-width: 560px) {
+  .vp__maprow { flex-direction: column; }
+  .vp__map, .vp__chips { flex: 1 1 auto; width: 100%; }
+}
