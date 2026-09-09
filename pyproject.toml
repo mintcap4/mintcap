@@ -1,12 +1,24 @@
 [project]
 name = "mintcap"
-version = "0.1.0"
-description = "Add your description here"
+version = "0.2.0"
+description = "Arduino UNO Q 실내 공기질 모니터링 -- 수집(hub) · 분석(analysis) · 웹(web)"
 requires-python = ">=3.13"
 dependencies = [
     "paho-mqtt>=2.1.0",
     "pandas>=3.0.3",
+    "numpy>=2.0",
+    "fastapi>=0.115",
+    "uvicorn>=0.34",
+    # 구 Streamlit 대시보드 -- 웹 전환 완료 후 제거 예정
     "plotly>=6.9.0",
     "streamlit>=1.59.2",
     "streamlit-autorefresh>=1.0.1",
+]
+
+# 학습 전용. 장치에는 설치하지 않는다 -- 판정은 models/gmm_v1.json 을
+# 읽어 numpy 로만 수행하므로(analysis/regimes.py) scikit-learn 이 필요 없다.
+# 학습할 때만:  uv sync --group train
+[dependency-groups]
+train = [
+    "scikit-learn>=1.5",
 ]
