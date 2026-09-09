@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>mintcap — 실내 공기질 모니터링</title>
+<link rel="stylesheet" href="/static/tokens.css">
+<link rel="stylesheet" href="/app.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">mintcap <span>실내 공기질</span></div>
+  <div class="health">
+    <span id="health-dot" class="dot"></span>
+    <span id="health-text">연결 중…</span>
+  </div>
+</header>
+
+<nav class="tabs" role="tablist">
+  <button class="tab" role="tab" aria-selected="true"  data-panel="monitor">모니터링</button>
+  <button class="tab" role="tab" aria-selected="false" data-panel="diagnose">진단 · 추론</button>
+  <button class="tab" role="tab" aria-selected="false" data-panel="control">제어 · 경보</button>
+  <button class="tab" role="tab" aria-selected="false" data-panel="admin">관리</button>
+</nav>
+
+<main>
+
+<!-- ===================== 모니터링 ===================== -->
+<section class="panel" id="panel-monitor" role="tabpanel">
+
+  <div class="section">
+    <h2>지금 상태</h2>
+    <p class="sub">매시간 배치가 계산한 결과. 마지막 계산 시각은 우측 상단.</p>
+    <div class="grid cols-4" id="summary-tiles"></div>
+  </div>
+
+  <div class="section">
+    <h2>레짐 점유율</h2>
+    <p class="sub">최근 3일. 각 5분 버킷이 어떤 레짐으로 판정됐는지의 비율.</p>
+    <div class="card">
+      <div class="band" id="share-band"></div>
+      <div class="legend" id="share-legend" style="margin-top:12px"></div>
+      <details class="table-view"><summary>표로 보기</summary>
+        <div id="share-table"></div>
+      </details>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>노드</h2>
+    <p class="sub">노드별 현재 판정과 최근 측정값.</p>
+    <div class="grid cols-3" id="node-cards"></div>
+  </div>
+
+  <div class="section">
+    <h2>시계열</h2>
+    <p class="sub">readings 원본을 5분 버킷 그대로. 마우스를 올리면 값이 표시됩니다.</p>
+    <div class="controls">
+      <select id="ts-node"></select>
+      <select id="ts-hours">
+        <option value="6">6시간</option>
+        <option value="24" selected>24시간</option>
+        <option value="72">3일</option>
+        <option value="168">7일</option>
+      </select>
+      <div class="spacer"></div>
+      <div class="legend" id="ts-legend"></div>
+    </div>
+    <div class="grid cols-2" id="ts-charts"></div>
+  </div>
+
+  <div class="section">
+    <h2>재실 × CO₂</h2>
+    <p class="sub">비전 노드의 재실 인원과 같은 버킷의 CO₂.</p>
+    <div id="occ-co2"></div>
+  </div>
+</section>
+
+<!-- ===================== 진단 · 추론 ===================== -->
+<section class="panel" id="panel-diagnose" role="tabpanel" hidden>
+
+  <div class="section">
+    <h2>레짐 평면</h2>
+    <p class="sub">
+      가로 x_co2 = CO₂/400 (외기 ≈ 1.0) · 세로 x_voc = VOC/100 (기준선 = 1.0).
+      점선은 이름을 정하는 앵커(CO₂ 700 · VOC 120). 레짐은 이 평면 위의 위치로
+      정의되므로 색이 아니라 자리로 읽습니다.
+    </p>
+    <div class="grid cols-2">
+      <figure class="card chart-wrap" id="plane-chart"></figure>
+      <div class="card">
+        <h3 style="margin:0 0 8px;font-size:var(--t-headline)">지금 각 노드가 어디에 있나</h3>
+        <div class="scroll-x"><table id="regime-table"></table></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>전이 행렬</h2>
+    <p class="sub">
+      연속한 두 5분 버킷의 레짐 쌍을 세어 행으로 정규화. 대각선이 지속확률입니다.
+      결측으로 끊긴 구간(gap)은 가짜 전이를 만들지 않도록 쌍에서 제외했습니다.
+    </p>
+    <div class="grid cols-2">
+      <div class="card"><div id="transition-heat"></div></div>
+      <div class="card"><div id="dwell-chart"></div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>시간대 밴드</h2>
+    <p class="sub">하루 24시간을 5분 슬롯으로 나눠, 그 시각에 가장 자주 나온 레짐.</p>
+    <div class="card" id="band-list"></div>
+  </div>
+</section>
+
+<!-- ===================== 제어 · 경보 ===================== -->
+<section class="panel" id="panel-control" role="tabpanel" hidden>
+
+  <div class="note" id="control-disclaimer">
+    <span>ℹ️</span>
+    <div><strong>판정·기록 전용.</strong> 연결된 환풍기·공기청정기가 없어 실제로 기기를
+    켜고 끄지는 않습니다. 아래는 규칙이 내린 판단과 그 근거이며,
+    상태는 <span class="mono">actuator_state</span> 에 기록되어 히스테리시스에 쓰입니다.</div>
+  </div>
+
+  <div class="section" style="margin-top:var(--sp-5)">
+    <h2>경보</h2>
+    <p class="sub">30분 뒤 예측이 작동 임계(CO₂ 1000 · VOC 200)를 넘는 노드.</p>
+    <div id="alerts"></div>
+  </div>
+
+  <div class="section">
+    <h2>행동지침</h2>
+    <p class="sub">
+      진단층(레짐)이 어떤 기기인지 고르고, 판단층(규칙)이 켤 만큼 나쁜지를 절대값으로
+      봅니다. 켜는 선(CO₂ 1000 · VOC 200)과 끄는 선(700 · 120)이 다른 것이
+      히스테리시스이고, 최소 동작 10분이 경계에서의 깜빡임을 막습니다.
+    </p>
+    <div class="grid cols-3" id="action-cards"></div>
+  </div>
+
+  <div class="section">
+    <h2>30분 예측</h2>
+    <p class="sub">지금 값과 30분 뒤 예측값. 예측이 임계를 넘으면 선제 경보가 됩니다.</p>
+    <div class="card scroll-x"><table id="forecast-table"></table></div>
+  </div>
+</section>
+
+<!-- ===================== 관리 ===================== -->
+<section class="panel" id="panel-admin" role="tabpanel" hidden>
+
+  <div class="section">
+    <h2>시스템</h2>
+    <div class="grid cols-4" id="admin-tiles"></div>
+  </div>
+
+  <div class="section">
+    <h2>QC 게이트</h2>
+    <p class="sub">
+      노드×일 단위 유효율. CO₂·VOC 둘 다 95% 이상이어야 그날 그 노드가 이후 분석에
+      들어갑니다. "눈으로 보니 이상해서 뺐다"는 재현이 안 되므로 선 하나로 자릅니다.
+    </p>
+    <div class="card scroll-x"><table id="qc-table"></table></div>
+  </div>
+
+  <div class="section">
+    <h2>모델</h2>
+    <p class="sub">언제 무엇으로 학습했고 성능이 어떤지.</p>
+    <div class="grid cols-2" id="model-cards"></div>
+  </div>
+</section>
+
+</main>
+
+<script type="module" src="/app.js"></script>
+</body>
+</html>

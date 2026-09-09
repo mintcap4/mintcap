@@ -29,3 +29,6 @@ filesss/
 # Streamlit 로컬 상태
 .streamlit/machine_id*
 .streamlit/secrets.toml
+
+# 로컬 미리보기 전용
+.claude/launch.json
