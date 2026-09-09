@@ -24,7 +24,7 @@ Arduino UNO Q 에서 도는 실내 공기질(멀티노드) 모니터링 시스�
 4. `main` 에 들어가면 **1분 안에** Q 에 반영된다.
 
 ```bash
-git clone https://github.com/<USER>/mintcap.git
+git clone https://github.com/mintcap4/mintcap.git
 cd mintcap && uv sync
 uv run streamlit run dashboard.py     # 로컬 미리보기
 ```
@@ -53,7 +53,7 @@ uv run streamlit run dashboard.py     # 로컬 미리보기
 
 ```bash
 # 1. 클론
-git clone https://github.com/<USER>/mintcap.git ~/mintcap && cd ~/mintcap
+git clone https://github.com/mintcap4/mintcap.git ~/mintcap && cd ~/mintcap
 
 # 2. 비밀값
 mkdir -p ~/.config/mintcap
